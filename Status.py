@@ -1,45 +1,34 @@
 import os
-import re
-import pytz
 import asyncio
 import datetime
+import pytz
 
 from pyrogram import Client
 from pyrogram.errors import FloodWait
 
-# ------------------- CLIENT -------------------
+# ================= CLIENT =================
 
 app = Client(
     name="piyush",
-    api_id=int(os.environ["39679517"]),
-    api_hash=os.environ["aed61e5ff8c711895f8b0c99e51c16cc"],
-    session_string=os.environ[""],
+    api_id=int(os.environ["API_ID"]),
+    api_hash=os.environ["API_HASH"],
+    session_string=os.environ["SESSION_STRING"],
 )
 
-# ------------------- ENV -------------------
+# ================= ENV =================
 
 TIME_ZONE = os.environ.get("TIME_ZONE", "Asia/Kolkata")
 
-BOT_LIST = [
-    "Roohi_queen_bot",
-    "roshni_x_music_bot",
-    "flex_musicbot",
-    "gojo_x_jinwoo_bot",
-    "snowy_x_musicbot",
-]
+# Space-separated bot usernames
+BOT_LIST = [i.strip() for i in os.environ.get("BOT_LIST").split()]
 
-BOT_ADMIN_IDS = [
-    8409591285, 
-    7651303468,
-    7487670897,
-    # replace with your real Telegram user ID
-]
+# Space-separated admin user IDs
+BOT_ADMIN_IDS = [int(i.strip()) for i in os.environ.get("BOT_ADMIN_IDS").split()]
 
-CHANNEL_ID = int(os.environ["-1003132769250"])   # Status channel/group
-MESSAGE_ID = int(os.environ["65"])   # Message to edit
-GRP_ID = int(os.environ["-1003228624224"])           # Logs group
+# Logs group ID (must be joined by string session account)
+GRP_ID = int(os.environ["GRP_ID"])
 
-# ------------------- PLUGINS TO CHECK -------------------
+# ================= PLUGINS =================
 
 PLUGIN_CHECKS = {
     "start": "/start",
@@ -48,12 +37,9 @@ PLUGIN_CHECKS = {
     "alive": "/alive",
 }
 
-# ------------------- HELPERS -------------------
+# ================= HELPERS =================
 
 async def check_plugin(bot_username: str, command: str) -> bool:
-    """
-    Sends a command and checks if bot replies
-    """
     try:
         sent = await app.send_message(bot_username, command)
         await asyncio.sleep(6)
@@ -66,7 +52,6 @@ async def check_plugin(bot_username: str, command: str) -> bool:
     except FloodWait as e:
         await asyncio.sleep(e.value)
         return False
-
     except Exception:
         return False
 
@@ -77,35 +62,30 @@ async def log_to_group(text: str):
     except Exception:
         pass
 
-# ------------------- MAIN LOOP -------------------
+# ================= MAIN LOOP =================
 
 async def main_piyushchecker():
     async with app:
         while True:
             print("🔍 Checking bots status...")
 
-            channel = await app.get_chat(CHANNEL_ID)
-
-            status_text = (
-                f"**✨ <u>ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ {channel.title}</u>**\n\n"
-                f"**<u>💫 ʀᴇᴀʟ ᴛɪᴍᴇ ʙᴏᴛ sᴛᴀᴛᴜs</u>**"
-            )
+            status_text = "**💫 REAL-TIME BOT STATUS**\n"
 
             for bot in BOT_LIST:
-                await asyncio.sleep(10)
+                await asyncio.sleep(8)
 
                 try:
                     bot_info = await app.get_users(bot)
                 except Exception:
                     continue
 
-                # ---------- BASIC LIFE CHECK ----------
+                # ---- LIFE CHECK ----
                 alive = await check_plugin(bot, "/start")
 
                 if not alive:
                     status_text += (
-                        f"\n\n╭⎋ **[{bot_info.first_name}](tg://user?id={bot_info.id})**"
-                        f"\n╰⊚ **sᴛᴀᴛᴜs: ᴏғғʟɪɴᴇ ❄**"
+                        f"\n\n❌ **{bot_info.first_name}**"
+                        f"\n➤ Status: **OFFLINE**"
                     )
 
                     await log_to_group(
@@ -115,7 +95,7 @@ async def main_piyushchecker():
                     )
                     continue
 
-                # ---------- PLUGIN CHECK ----------
+                # ---- PLUGIN CHECK ----
                 broken = []
 
                 for name, cmd in PLUGIN_CHECKS.items():
@@ -125,46 +105,36 @@ async def main_piyushchecker():
 
                 if broken:
                     status_text += (
-                        f"\n\n╭⎋ **[{bot_info.first_name}](tg://user?id={bot_info.id})**"
-                        f"\n╰⊚ **sᴛᴀᴛᴜs: ⚠️ PARTIAL**"
+                        f"\n\n⚠️ **{bot_info.first_name}**"
+                        f"\n➤ Status: **PARTIAL**"
+                        f"\n➤ Broken: `{', '.join(broken)}`"
                     )
 
                     await log_to_group(
-                        f"⚠️ **PLUGIN ERROR**\n\n"
+                        f"⚠️ **PLUGIN ISSUE**\n\n"
                         f"➤ **Bot:** [{bot_info.first_name}](tg://user?id={bot_info.id})\n"
                         f"➤ **Broken Plugins:** `{', '.join(broken)}`"
                     )
                 else:
                     status_text += (
-                        f"\n\n╭⎋ **[{bot_info.first_name}](tg://user?id={bot_info.id})**"
-                        f"\n╰⊚ **sᴛᴀᴛᴜs: ᴏɴʟɪɴᴇ ✨**"
+                        f"\n\n✅ **{bot_info.first_name}**"
+                        f"\n➤ Status: **ONLINE**"
                     )
 
                 await app.read_chat_history(bot)
 
-            # ---------- FOOTER ----------
             now = datetime.datetime.now(pytz.timezone(TIME_ZONE))
-            date = now.strftime("%d %b %Y")
-            time = now.strftime("%I:%M %p")
-
             status_text += (
-                f"\n\n➻ **ʟᴀꜱᴛ ᴄʜᴇᴄᴋ**"
-                f"\n➻ **ᴅᴀᴛᴇ:** {date}"
-                f"\n➻ **ᴛɪᴍᴇ:** {time}"
-                f"\n\n<u>๏ ʀᴇғʀᴇsʜᴇs ᴀᴜᴛᴏᴍᴀᴛɪᴄᴀʟʟʏ ᴇᴠᴇʀʏ 30 ᴍɪɴᴜᴛᴇs</u>"
-                f"\n\n<b>๏ ᴘᴏᴡᴇʀᴇᴅ ʙʏ @{channel.username}</b>"
+                f"\n\n🕒 **Last Check**"
+                f"\n📅 `{now.strftime('%d %b %Y')}`"
+                f"\n⏰ `{now.strftime('%I:%M %p')}`"
+                f"\n\n♻️ Auto refresh every **30 minutes**"
             )
 
-            await app.edit_message_text(
-                chat_id=CHANNEL_ID,
-                message_id=MESSAGE_ID,
-                text=status_text,
-                disable_web_page_preview=True,
-            )
+            await log_to_group(status_text)
+            await asyncio.sleep(1800)
 
-            await asyncio.sleep(1800)  # 30 minutes
-
-# ------------------- RUN -------------------
+# ================= RUN =================
 
 if __name__ == "__main__":
     asyncio.get_event_loop().run_until_complete(main_piyushchecker())
