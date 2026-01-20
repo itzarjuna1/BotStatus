@@ -11,9 +11,9 @@ from pyrogram.errors import FloodWait
 
 app = Client(
     name="piyush",
-    api_id=int(os.environ["API_ID", "39679517"]),
-    api_hash=os.environ["API_HASH", "aed61e5ff8c711895f8b0c99e51c16cc"],
-    session_string=os.environ["SESSION_STRING", ""],
+    api_id=int(os.environ["39679517"]),
+    api_hash=os.environ["aed61e5ff8c711895f8b0c99e51c16cc"],
+    session_string=os.environ[""],
 )
 
 # ------------------- ENV -------------------
